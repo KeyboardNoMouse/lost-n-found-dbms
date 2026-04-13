@@ -14,7 +14,6 @@ export default function Navbar() {
           NIE <span className="logo-highlight">Lost & Found</span>
         </Link>
         <div className="nav-links">
-          <Link href="/" className="nav-link">Home</Link>
           {session && (
             <Link href="/add" className="btn-primary">
               Report Item

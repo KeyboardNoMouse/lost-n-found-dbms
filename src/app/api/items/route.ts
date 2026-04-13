@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     const category = formData.get('category') as string;
     const location = formData.get('location') as string;
     const date = formData.get('date') as string;
+    const phone = formData.get('phone') as string;
     const image = formData.get('image') as File;
 
     let imageUrl = '';
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
       imageUrl,
       reporterEmail: session.user.email,
       reporterName: session.user.name,
+      reporterPhone: phone || undefined,
       status: 'open'
     });
 

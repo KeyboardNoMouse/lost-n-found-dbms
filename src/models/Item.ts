@@ -11,6 +11,7 @@ export interface IItem {
   imageUrl?: string;
   reporterEmail: string;
   reporterName: string;
+  reporterPhone?: string;
   status: "open" | "resolved";
   createdAt: Date;
 }
@@ -25,6 +26,7 @@ const ItemSchema = new Schema<IItem>({
   imageUrl: { type: String },
   reporterEmail: { type: String, required: true },
   reporterName: { type: String, required: true },
+  reporterPhone: { type: String, required: false },
   status: { type: String, enum: ["open", "resolved"], default: "open" },
   createdAt: { type: Date, default: Date.now }
 });
