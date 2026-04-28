@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -10,6 +10,14 @@ export default function AddItem() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [maxDatetime, setMaxDatetime] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(now.getTime() - tzOffset)).toISOString().slice(0,16);
+    setMaxDatetime(localISOTime);
+  }, []);
 
   if (status === "loading") return <main><div className="text-center mt-2">Loading...</div></main>;
   if (!session) {
@@ -71,7 +79,7 @@ export default function AddItem() {
 
             <div className="form-group" style={{ gridColumn: "1 / -1" }}>
               <label>Description</label>
-              <textarea name="description" className="form-control" rows={3} placeholder="Color, brand, identifying marks..." required></textarea>
+              <textarea name="description" className="form-control" rows={3} placeholder="Color, brand, identifying marks..." maxLength={200} required></textarea>
             </div>
 
             <div className="form-group">
@@ -99,8 +107,8 @@ export default function AddItem() {
             </div>
 
             <div className="form-group">
-              <label>Date Lost/Found</label>
-              <input type="date" name="date" className="form-control" required />
+              <label>Date & Time Lost/Found</label>
+              <input type="datetime-local" name="date" className="form-control" max={maxDatetime || undefined} required />
             </div>
           </div>
 

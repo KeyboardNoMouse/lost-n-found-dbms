@@ -28,6 +28,14 @@ export default function History() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [maxDatetime, setMaxDatetime] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(now.getTime() - tzOffset)).toISOString().slice(0,16);
+    setMaxDatetime(localISOTime);
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -96,7 +104,9 @@ export default function History() {
         body: JSON.stringify({
           title: editingItem.title,
           description: editingItem.description,
-          location: editingItem.location
+          location: editingItem.location,
+          date: editingItem.date,
+          reporterPhone: editingItem.reporterPhone
         })
       });
       
@@ -159,7 +169,7 @@ export default function History() {
                   </div>
                   <div className="meta-row">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    {new Date(item.date).toLocaleDateString('en-GB')}
+                    {new Date(item.date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
                   </div>
                 </div>
 
@@ -171,7 +181,10 @@ export default function History() {
                     {item.status === 'open' ? 'Mark Recovered' : 'Reopen'}
                   </button>
                   <button 
-                    onClick={() => setEditingItem(item)} 
+                    onClick={() => {
+                      const localDate = new Date(new Date(item.date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                      setEditingItem({...item, date: localDate});
+                    }} 
                     className="btn-action" 
                     style={{ flex: 1, padding: '0.4rem', border: '1px solid var(--primary)', background: 'transparent', color: 'var(--primary)', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
                     Edit
@@ -221,6 +234,27 @@ export default function History() {
                   onChange={e => setEditingItem({...editingItem, location: e.target.value})}
                   style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border)', borderRadius: '4px' }}
                   required
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500' }}>Date & Time</label>
+                <input 
+                  type="datetime-local" 
+                  value={editingItem.date} 
+                  onChange={e => setEditingItem({...editingItem, date: e.target.value})}
+                  max={maxDatetime || undefined}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border)', borderRadius: '4px' }}
+                  required
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500' }}>Contact Phone (Optional)</label>
+                <input 
+                  type="tel" 
+                  value={editingItem.reporterPhone || ''} 
+                  onChange={e => setEditingItem({...editingItem, reporterPhone: e.target.value})}
+                  pattern="[0-9\+\-\s\(\)]*"
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border)', borderRadius: '4px' }}
                 />
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
