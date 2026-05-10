@@ -14,7 +14,7 @@ const PAGE_SIZE = 12;
 const PUBLIC_PROJECTION = {
   title: 1, description: 1, type: 1, category: 1,
   location: 1, date: 1, imageUrl: 1, reporterName: 1,
-  reporterPhone: 1, status: 1, createdAt: 1,
+  reporterEmail: 1, reporterPhone: 1, status: 1, createdAt: 1,
 };
 
 export async function GET(request: Request) {

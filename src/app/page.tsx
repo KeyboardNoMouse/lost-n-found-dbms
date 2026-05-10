@@ -13,6 +13,7 @@ type Item = {
   date: string;
   imageUrl?: string;
   reporterName: string;
+  reporterEmail: string;
   reporterPhone?: string;
   status: string;
 };
@@ -29,6 +30,10 @@ function SkeletonCard() {
         <div className="skeleton skeleton-title" />
         <div className="skeleton skeleton-text" />
         <div className="skeleton skeleton-text short" />
+        <div className="meta-actions" style={{ marginTop: "1.5rem" }}>
+          <div className="skeleton" style={{ height: "32px", flex: 1 }} />
+          <div className="skeleton" style={{ height: "32px", flex: 1 }} />
+        </div>
       </div>
     </div>
   );
@@ -135,9 +140,9 @@ export default function Home() {
         </div>
       ) : (
         <>
-          {pagination && (
+        {pagination && (
             <p className="results-count">
-              {pagination.total} item{pagination.total !== 1 ? "s" : ""} found
+              {pagination.total} Report{pagination.total !== 1 ? "s" : ""} found
             </p>
           )}
           <div className="items-grid">
@@ -188,13 +193,16 @@ export default function Home() {
                         {item.reporterName}
                       </div>
 
-                      {item.reporterPhone && (
-                        <div className="meta-actions">
+                      <div className="meta-actions">
+                        {item.reporterPhone && (
                           <a href={`tel:${item.reporterPhone}`} className="btn-contact btn-contact-phone">
                             Call
                           </a>
-                        </div>
-                      )}
+                        )}
+                        <a href={`mailto:${item.reporterEmail}`} className="btn-contact btn-contact-email">
+                          Email
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>

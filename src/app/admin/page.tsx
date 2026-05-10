@@ -22,6 +22,7 @@ type Item = {
   category: string;
   status: string;
   reporterEmail: string;
+  imageUrl?: string;
   createdAt: string;
   deletedAt: string | null;
 };
@@ -171,7 +172,7 @@ export default function AdminPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
                 <thead>
                   <tr style={{ background: "var(--bg-color)", borderBottom: "1px solid var(--border-color)" }}>
-                    {["Title", "Type", "Category", "Status", "Reporter", "Created", "Actions"].map((h) => (
+                    {["Title", "Image", "Type", "Category", "Status", "Reporter", "Created", "Actions"].map((h) => (
                       <th key={h} style={{ padding: "0.875rem 1rem", textAlign: "left", fontWeight: 600, color: "var(--text-muted)" }}>{h}</th>
                     ))}
                   </tr>
@@ -180,6 +181,19 @@ export default function AdminPage() {
                   {items.map((item) => (
                     <tr key={item._id} style={{ borderBottom: "1px solid var(--border-color)", opacity: item.deletedAt ? 0.5 : 1 }}>
                       <td style={{ padding: "0.75rem 1rem", maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {item.imageUrl ? (
+                          <a href={item.imageUrl} target="_blank" rel="noopener noreferrer">
+                            <img 
+                              src={item.imageUrl} 
+                              alt="Thumbnail" 
+                              style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border-color)" }} 
+                            />
+                          </a>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.7rem" }}>No image</span>
+                        )}
+                      </td>
                       <td style={{ padding: "0.75rem 1rem" }}>
                         <span style={{ background: item.type === "lost" ? "rgba(220,38,38,0.1)" : "rgba(5,150,105,0.1)", color: item.type === "lost" ? "#dc2626" : "#059669", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600 }}>
                           {item.type.toUpperCase()}
