@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { isAdmin } from '@/lib/adminAuth';
 
+// Fields a reporter is allowed to update on their own item
 const ALLOWED_PATCH_FIELDS = new Set(['title', 'description', 'location', 'date', 'reporterPhone', 'status']);
 
 export async function PATCH(
@@ -33,9 +34,11 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // Whitelist: only allow known safe fields, strip everything else
     const safeUpdates: Record<string, unknown> = {};
     for (const key of ALLOWED_PATCH_FIELDS) {
       if (key in body) {
+        // Extra: validate status enum
         if (key === 'status' && !['open', 'resolved', 'expired'].includes(body[key])) continue;
         safeUpdates[key] = body[key];
       }
@@ -57,9 +60,8 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true, data: updatedItem }, { status: 200 });
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
@@ -86,6 +88,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
+    // Soft-delete: stamp deletedAt instead of destroying the document
     await Item.findByIdAndUpdate(id, { deletedAt: new Date() });
 
     if (admin) {
@@ -98,8 +101,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true, data: {} }, { status: 200 });
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

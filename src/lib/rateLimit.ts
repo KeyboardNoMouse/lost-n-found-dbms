@@ -1,7 +1,5 @@
-// Rate limiter backed by in-memory store.
-// NOTE: For production on serverless (Vercel) replace with Upstash Redis:
-//   https://docs.upstash.com/redis/sdks/ratelimit-ts/overview
-// The interface is intentionally compatible so swapping is a one-file change.
+// Simple in-memory rate limiter (resets on server restart)
+// For production, replace with Redis-backed limiter
 
 interface RateLimitEntry {
   count: number;
@@ -11,8 +9,8 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 
 interface RateLimitOptions {
-  windowMs: number;
-  max: number;
+  windowMs: number; // time window in ms
+  max: number;      // max requests per window
 }
 
 export function checkRateLimit(
