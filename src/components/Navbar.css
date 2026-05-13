@@ -142,3 +142,37 @@
     transform: translateY(0);
   }
 }
+
+/* Updated nav item styles */
+.admin-link {
+  padding: 0.5rem 1rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  margin-right: 0.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+.admin-link:hover {
+  background: rgba(192, 124, 102, 0.1);
+}
+.history-link {
+  padding: 0.5rem 1rem;
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 500;
+  margin-right: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.history-link:hover {
+  background: var(--surface-color);
+}
+.profile-trigger {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}

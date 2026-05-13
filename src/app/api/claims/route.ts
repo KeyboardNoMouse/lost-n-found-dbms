@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { validateClaimInput } from '@/lib/validation';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { sendClaimNotification } from '@/lib/notify';
 
 // GET /api/claims?itemId=xxx — only item owner can see claims on their item
 export async function GET(request: NextRequest) {
@@ -28,15 +29,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Item not found' }, { status: 404 });
     }
 
-    // Only the reporter of the item can see who claimed it
     if (item.reporterEmail !== session.user.email) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const claims = await Claim.find({ itemId }).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, data: claims }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
 
@@ -75,12 +76,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Item not found or already resolved' }, { status: 404 });
     }
 
-    // Reporter cannot claim their own item
     if (item.reporterEmail === session.user.email) {
       return NextResponse.json({ success: false, error: 'You cannot claim your own item' }, { status: 400 });
     }
 
-    // Upsert prevents duplicate claims from the same person
     const claim = await Claim.findOneAndUpdate(
       { itemId, claimerEmail: session.user.email },
       {
@@ -91,8 +90,24 @@ export async function POST(request: NextRequest) {
       { upsert: true, new: true }
     );
 
+    // Send email notification to item owner (non-fatal if it fails)
+    try {
+      await sendClaimNotification({
+        ownerEmail:   item.reporterEmail,
+        ownerName:    item.reporterName,
+        itemTitle:    item.title,
+        claimerName:  session.user.name ?? 'Unknown',
+        claimerEmail: session.user.email,
+        message:      String(message).trim(),
+        itemId,
+      });
+    } catch (notifyErr) {
+      console.error('[claims] notification failed:', notifyErr);
+    }
+
     return NextResponse.json({ success: true, data: claim }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

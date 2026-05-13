@@ -9,44 +9,53 @@ import { checkRateLimit } from '@/lib/rateLimit';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const PAGE_SIZE = 12;
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// Fields exposed to unauthenticated users — email is excluded
+// Fields exposed to unauthenticated users — email & phone are excluded
 const PUBLIC_PROJECTION = {
   title: 1, description: 1, type: 1, category: 1,
   location: 1, date: 1, imageUrl: 1, reporterName: 1,
-  reporterEmail: 1, reporterPhone: 1, status: 1, createdAt: 1,
+  status: 1, createdAt: 1,
 };
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const type        = searchParams.get('type');
-    const category    = searchParams.get('category');
-    const search      = searchParams.get('search');
-    const page        = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
+    const type          = searchParams.get('type');
+    const category      = searchParams.get('category');
+    const search        = searchParams.get('search');
+    const sortParam     = searchParams.get('sort') ?? 'newest';
+    const page          = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
     const reporterEmail = searchParams.get('reporterEmail');
 
     // Only authenticated users may query by reporterEmail (their own history)
     const session = await getServerSession(authOptions);
-    const isOwnerQuery = reporterEmail && session?.user?.email === reporterEmail;
+    const isOwnerQuery = !!(reporterEmail && session?.user?.email === reporterEmail);
 
     const query: Record<string, unknown> = { deletedAt: null };
 
     if (isOwnerQuery) {
       query.reporterEmail = reporterEmail;
     } else {
-      // Public dashboard: open items only, no PII filter
       query.status = 'open';
       if (type && ['lost', 'found'].includes(type)) query.type = type;
       if (category) query.category = category;
       if (search) query.$text = { $search: search };
     }
 
+    // Sort order
+    let sortOrder: Record<string, unknown> = { date: -1 };
+    if (search) {
+      sortOrder = { score: { $meta: 'textScore' }, date: -1 };
+    } else if (sortParam === 'oldest') {
+      sortOrder = { date: 1 };
+    }
+
     await connectToDatabase();
 
     const [items, total] = await Promise.all([
       Item.find(query, isOwnerQuery ? undefined : PUBLIC_PROJECTION)
-        .sort(search ? { score: { $meta: 'textScore' }, date: -1 } : { date: -1 })
+        .sort(sortOrder)
         .skip((page - 1) * PAGE_SIZE)
         .limit(PAGE_SIZE)
         .lean(),
@@ -58,8 +67,9 @@ export async function GET(request: Request) {
       data: items,
       pagination: { page, pageSize: PAGE_SIZE, total, totalPages: Math.ceil(total / PAGE_SIZE) },
     }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
 
@@ -90,7 +100,6 @@ export async function POST(request: Request) {
       phone:       formData.get('phone'),
     };
 
-    // Server-side validation
     const errors = validateItemInput(rawData as Record<string, unknown>);
     if (errors.length > 0) {
       return NextResponse.json({ success: false, errors }, { status: 422 });
@@ -98,12 +107,20 @@ export async function POST(request: Request) {
 
     const image = formData.get('image') as File | null;
 
-    // Image size guard (before sending to Cloudinary)
-    if (image && image.size > MAX_IMAGE_BYTES) {
-      return NextResponse.json(
-        { success: false, error: 'Image must be smaller than 5 MB' },
-        { status: 400 }
-      );
+    // Image validation: size + MIME type
+    if (image && image.size > 0) {
+      if (image.size > MAX_IMAGE_BYTES) {
+        return NextResponse.json(
+          { success: false, error: 'Image must be smaller than 5 MB' },
+          { status: 400 }
+        );
+      }
+      if (!ALLOWED_MIME_TYPES.includes(image.type)) {
+        return NextResponse.json(
+          { success: false, error: 'Only JPEG, PNG, WebP and GIF images are allowed' },
+          { status: 400 }
+        );
+      }
     }
 
     await connectToDatabase();
@@ -143,7 +160,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, data: newItem }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
