@@ -54,7 +54,6 @@ export function validateClaimInput(data: Record<string, unknown>): ValidationErr
   const errors: ValidationError[] = [];
   const message = String(data.message ?? "").trim();
 
-  if (!message) errors.push({ field: "message", message: "Message is required" });
   if (message.length > 500) errors.push({ field: "message", message: "Message must be 500 characters or fewer" });
 
   return errors;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import "./page.css";
 
 type Item = {
@@ -49,6 +50,13 @@ export default function Home() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
 
+  // Reporting states
+  const [reportingItemId, setReportingItemId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [reportSuccess, setReportSuccess] = useState(false);
+
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
@@ -69,6 +77,32 @@ export default function Home() {
     }
     setLoading(false);
   }, [filter, category, search, page]);
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportingItemId) return;
+    setSubmittingReport(true);
+    setReportError("");
+
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: reportingItemId, reason: reportReason }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReportSuccess(true);
+        setReportReason("");
+      } else {
+        setReportError(data.error || "Failed to submit report");
+      }
+    } catch (err: any) {
+      setReportError(err.message);
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
 
   useEffect(() => {
     setPage(1);
@@ -194,14 +228,18 @@ export default function Home() {
                       </div>
 
                       <div className="meta-actions">
-                        {item.reporterPhone && (
-                          <a href={`tel:${item.reporterPhone}`} className="btn-contact btn-contact-phone">
-                            Call
-                          </a>
-                        )}
-                        <a href={`mailto:${item.reporterEmail}`} className="btn-contact btn-contact-email">
-                          Email
-                        </a>
+                        <Link href={`/claim/${item._id}`} className="btn-contact btn-contact-claim">
+                          {item.type === 'lost' ? 'Respond' : 'Claim'}
+                        </Link>
+                        <button 
+                          className="btn-report-flag" 
+                          onClick={() => setReportingItemId(item._id)}
+                          title="Report this item"
+                        >
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -231,6 +269,58 @@ export default function Home() {
             </div>
           )}
         </>
+      )}
+
+      {/* Report Modal */}
+      {reportingItemId && (
+        <div className="modal-overlay" onClick={() => { setReportingItemId(null); setReportSuccess(false); }}>
+          <div className="modal-content report-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Report Item</h2>
+              <button className="close-btn" onClick={() => { setReportingItemId(null); setReportSuccess(false); }}>✕</button>
+            </div>
+            {reportSuccess ? (
+              <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
+                <div style={{ color: "#10b981", marginBottom: "1rem" }}>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="48" height="48" style={{ margin: "0 auto", display: "block" }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 style={{ marginBottom: "0.5rem", color: "var(--text-main)", fontSize: "1.25rem" }}>Report Submitted Successfully</h3>
+                <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>Thank you. Our team will review this item shortly.</p>
+                <button type="button" className="btn-contact-claim" onClick={() => { setReportingItemId(null); setReportSuccess(false); }} style={{ padding: "0.6rem 1.25rem", borderRadius: "8px", fontWeight: 600, border: "none", cursor: "pointer" }}>
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleReportSubmit}>
+              <p className="modal-desc" style={{ marginBottom: "1.5rem", color: "var(--text-muted)", fontSize: "0.95rem" }}>
+                If you believe this item is spam, contains misinformation, or is inappropriate, please let us know.
+              </p>
+              {reportError && <div className="error-banner" style={{ marginBottom: "1rem", color: "#dc2626", background: "rgba(220,38,38,0.1)", padding: "0.75rem", borderRadius: "6px" }}>{reportError}</div>}
+              <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <label htmlFor="reportReason" style={{ fontWeight: 600 }}>Reason for reporting</label>
+                <textarea
+                  id="reportReason"
+                  required
+                  rows={4}
+                  className="search-input"
+                  style={{ height: "auto", padding: "1rem" }}
+                  placeholder="Please provide details about why you are reporting this item..."
+                  value={reportReason}
+                  onChange={e => setReportReason(e.target.value)}
+                />
+              </div>
+              <div className="modal-actions" style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+                <button type="button" className="page-btn" onClick={() => { setReportingItemId(null); setReportSuccess(false); }}>Cancel</button>
+                <button type="submit" className="btn-contact-claim" disabled={submittingReport} style={{ padding: "0.6rem 1.25rem", borderRadius: "8px", fontWeight: 600, border: "none", cursor: submittingReport ? "not-allowed" : "pointer", opacity: submittingReport ? 0.7 : 1 }}>
+                  {submittingReport ? "Submitting..." : "Submit Report"}
+                </button>
+              </div>
+            </form>
+            )}
+          </div>
+        </div>
       )}
     </main>
   );
