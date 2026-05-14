@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { validateClaimInput } from '@/lib/validation';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { sendEmail } from '@/lib/email';
 
 // GET /api/claims?itemId=xxx — only item owner can see claims on their item
 export async function GET(request: NextRequest) {
@@ -80,16 +81,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'You cannot claim your own item' }, { status: 400 });
     }
 
+    let finalMessage = message ? String(message).trim() : '';
+    if (!finalMessage) {
+      finalMessage = item.type === 'lost'
+        ? "I have information about your lost item. Please get in touch."
+        : "I would like to claim this item. Please get in touch.";
+    }
+
     // Upsert prevents duplicate claims from the same person
     const claim = await Claim.findOneAndUpdate(
       { itemId, claimerEmail: session.user.email },
       {
         claimerName: session.user.name ?? 'Unknown',
-        message: String(message).trim(),
+        message: finalMessage,
         status: 'pending',
       },
       { upsert: true, new: true }
     );
+
+const reporterEmailText = `
+Hello ${item.reporterName},
+
+${session.user.name || session.user.email} (${session.user.email}) ${item.type === 'lost' ? 'has responded to your lost item report for' : 'has claimed the item you found:'} "${item.title}".
+
+Message from them:
+"${finalMessage}"
+
+Please contact them via their email to coordinate.
+
+Thank you,
+NIE LostnFound Team
+    `.trim();
+
+    const claimerEmailText = `
+Hello ${session.user.name || session.user.email},
+
+We have notified ${item.reporterName} that you ${item.type === 'lost' ? 'have information about their lost item' : 'wish to claim'} "${item.title}".
+
+Your message to them:
+"${finalMessage}"
+
+They will contact you soon. If they don't, you can also reach out to them if their contact details are available.
+
+Thank you,
+NIE LostnFound Team
+    `.trim();
+
+    // Send emails asynchronously
+    await Promise.allSettled([
+      sendEmail({
+        to: item.reporterEmail,
+        subject: item.type === 'lost' 
+          ? `[NIE LostnFound] Someone responded to your lost item: ${item.title}`
+          : `[NIE LostnFound] Someone claimed your found item: ${item.title}`,
+        text: reporterEmailText,
+      }),
+      sendEmail({
+        to: session.user.email,
+        subject: item.type === 'lost'
+          ? `[NIE LostnFound] Your response was sent for the lost item: ${item.title}`
+          : `[NIE LostnFound] Claim request sent for: ${item.title}`,
+        text: claimerEmailText,
+      })
+    ]);
 
     return NextResponse.json({ success: true, data: claim }, { status: 201 });
   } catch (error: any) {

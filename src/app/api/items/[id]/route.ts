@@ -9,6 +9,25 @@ import { isAdmin } from '@/lib/adminAuth';
 // Fields a reporter is allowed to update on their own item
 const ALLOWED_PATCH_FIELDS = new Set(['title', 'description', 'location', 'date', 'reporterPhone', 'status']);
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await connectToDatabase();
+    const { id } = await params;
+
+    const item = await Item.findOne({ _id: id, deletedAt: null }).lean();
+    if (!item) {
+      return NextResponse.json({ success: false, error: 'Item not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: item }, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

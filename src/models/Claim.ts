@@ -16,7 +16,7 @@ const ClaimSchema = new Schema<IClaim>(
     itemId: { type: Schema.Types.ObjectId, ref: "Item", required: true },
     claimerEmail: { type: String, required: true, lowercase: true, trim: true },
     claimerName: { type: String, required: true, trim: true },
-    message: { type: String, required: true, maxlength: 500, trim: true },
+    message: { type: String, maxlength: 500, trim: true, default: "" },
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
