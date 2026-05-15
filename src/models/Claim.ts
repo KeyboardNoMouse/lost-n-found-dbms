@@ -6,6 +6,7 @@ export interface IClaim {
   claimerEmail: string;
   claimerName: string;
   message: string;
+  phone?: string;
   status: "pending" | "accepted" | "rejected";
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +18,7 @@ const ClaimSchema = new Schema<IClaim>(
     claimerEmail: { type: String, required: true, lowercase: true, trim: true },
     claimerName: { type: String, required: true, trim: true },
     message: { type: String, maxlength: 500, trim: true, default: "" },
+    phone: { type: String, trim: true, default: "" },
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
