@@ -16,6 +16,7 @@ export default function ClaimPage({ params }: { params: Promise<{ itemId: string
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -52,7 +53,7 @@ export default function ClaimPage({ params }: { params: Promise<{ itemId: string
       const res = await fetch("/api/claims", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId, message }),
+        body: JSON.stringify({ itemId, message, phone }),
       });
       const data = await res.json();
 
@@ -133,6 +134,19 @@ export default function ClaimPage({ params }: { params: Promise<{ itemId: string
               className="form-input"
             />
             <p className="helper-text">{item.type === 'lost' ? 'If left empty, a default response will be sent.' : 'If left empty, a default claim message will be sent.'}</p>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone">Phone Number (Optional)</label>
+            <input
+              type="tel"
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. +91 9876543210"
+              className="form-input"
+            />
+            <p className="helper-text">Provide your phone number for faster contact.</p>
           </div>
 
           <div className="form-actions">

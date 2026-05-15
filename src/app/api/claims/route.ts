@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, errors }, { status: 422 });
     }
 
-    const { itemId, message } = body;
+    const { itemId, message, phone } = body;
     if (!itemId) {
       return NextResponse.json({ success: false, error: 'itemId is required' }, { status: 400 });
     }
@@ -88,12 +88,15 @@ export async function POST(request: NextRequest) {
         : "I would like to claim this item. Please get in touch.";
     }
 
+    const finalPhone = phone ? String(phone).trim() : '';
+
     // Upsert prevents duplicate claims from the same person
     const claim = await Claim.findOneAndUpdate(
       { itemId, claimerEmail: session.user.email },
       {
         claimerName: session.user.name ?? 'Unknown',
         message: finalMessage,
+        phone: finalPhone,
         status: 'pending',
       },
       { upsert: true, new: true }
@@ -103,11 +106,11 @@ const reporterEmailText = `
 Hello ${item.reporterName},
 
 ${session.user.name || session.user.email} (${session.user.email}) ${item.type === 'lost' ? 'has responded to your lost item report for' : 'has claimed the item you found:'} "${item.title}".
-
+${finalPhone ? `\nTheir phone number: ${finalPhone}` : ''}
 Message from them:
 "${finalMessage}"
 
-Please contact them via their email to coordinate.
+Please contact them via their email ${finalPhone ? 'or phone number ' : ''}to coordinate.
 
 Thank you,
 NIE LostnFound Team

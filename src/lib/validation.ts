@@ -53,8 +53,15 @@ export function validateItemInput(data: Record<string, unknown>): ValidationErro
 export function validateClaimInput(data: Record<string, unknown>): ValidationError[] {
   const errors: ValidationError[] = [];
   const message = String(data.message ?? "").trim();
+  const phone = String(data.phone ?? "").trim();
 
   if (message.length > 500) errors.push({ field: "message", message: "Message must be 500 characters or fewer" });
+
+  if (phone) {
+    const phoneRegex = /^\+?[\d\s\-()]{7,20}$/;
+    if (!phoneRegex.test(phone))
+      errors.push({ field: "phone", message: "Invalid phone number format" });
+  }
 
   return errors;
 }
