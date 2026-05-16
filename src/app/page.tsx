@@ -176,7 +176,7 @@ export default function Home() {
         </div>
       ) : (
         <>
-        {pagination && (
+          {pagination && (
             <p className="results-count">
               {pagination.total} Report{pagination.total !== 1 ? "s" : ""} found
             </p>
@@ -230,11 +230,11 @@ export default function Home() {
                       </div>
 
                       <div className="meta-actions">
-                        <Link href={`/claim/${item._id}`} className="btn-contact btn-contact-claim" onClick={(e) => e.stopPropagation()}>
+                        <Link href={`/item/${item._id}`} className="btn-contact btn-contact-claim" onClick={(e) => e.stopPropagation()}>
                           {item.type === 'lost' ? 'Respond' : 'Claim'}
                         </Link>
-                        <button 
-                          className="btn-report-flag" 
+                        <button
+                          className="btn-report-flag"
                           onClick={(e) => { e.stopPropagation(); setReportingItemId(item._id); }}
                           title="Report this item"
                         >
@@ -296,30 +296,30 @@ export default function Home() {
               </div>
             ) : (
               <form onSubmit={handleReportSubmit}>
-              <p className="modal-desc" style={{ marginBottom: "1.5rem", color: "var(--text-muted)", fontSize: "0.95rem" }}>
-                If you believe this item is spam, contains misinformation, or is inappropriate, please let us know.
-              </p>
-              {reportError && <div className="error-banner" style={{ marginBottom: "1rem", color: "#dc2626", background: "rgba(220,38,38,0.1)", padding: "0.75rem", borderRadius: "6px" }}>{reportError}</div>}
-              <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <label htmlFor="reportReason" style={{ fontWeight: 600 }}>Reason for reporting</label>
-                <textarea
-                  id="reportReason"
-                  required
-                  rows={4}
-                  className="search-input"
-                  style={{ height: "auto", padding: "1rem" }}
-                  placeholder="Please provide details about why you are reporting this item..."
-                  value={reportReason}
-                  onChange={e => setReportReason(e.target.value)}
-                />
-              </div>
-              <div className="modal-actions" style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
-                <button type="button" className="page-btn" onClick={() => { setReportingItemId(null); setReportSuccess(false); }}>Cancel</button>
-                <button type="submit" className="btn-contact-claim" disabled={submittingReport} style={{ padding: "0.6rem 1.25rem", borderRadius: "8px", fontWeight: 600, border: "none", cursor: submittingReport ? "not-allowed" : "pointer", opacity: submittingReport ? 0.7 : 1 }}>
-                  {submittingReport ? "Submitting..." : "Submit Report"}
-                </button>
-              </div>
-            </form>
+                <p className="modal-desc" style={{ marginBottom: "1.5rem", color: "var(--text-muted)", fontSize: "0.95rem" }}>
+                  If you believe this item is spam, contains misinformation, or is inappropriate, please let us know.
+                </p>
+                {reportError && <div className="error-banner" style={{ marginBottom: "1rem", color: "#dc2626", background: "rgba(220,38,38,0.1)", padding: "0.75rem", borderRadius: "6px" }}>{reportError}</div>}
+                <div className="form-group" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  <label htmlFor="reportReason" style={{ fontWeight: 600 }}>Reason for reporting</label>
+                  <textarea
+                    id="reportReason"
+                    required
+                    rows={4}
+                    className="search-input"
+                    style={{ height: "auto", padding: "1rem" }}
+                    placeholder="Please provide details about why you are reporting this item..."
+                    value={reportReason}
+                    onChange={e => setReportReason(e.target.value)}
+                  />
+                </div>
+                <div className="modal-actions" style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+                  <button type="button" className="page-btn" onClick={() => { setReportingItemId(null); setReportSuccess(false); }}>Cancel</button>
+                  <button type="submit" className="btn-contact-claim" disabled={submittingReport} style={{ padding: "0.6rem 1.25rem", borderRadius: "8px", fontWeight: 600, border: "none", cursor: submittingReport ? "not-allowed" : "pointer", opacity: submittingReport ? 0.7 : 1 }}>
+                    {submittingReport ? "Submitting..." : "Submit Report"}
+                  </button>
+                </div>
+              </form>
             )}
           </div>
         </div>
