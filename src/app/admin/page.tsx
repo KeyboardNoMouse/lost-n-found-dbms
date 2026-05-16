@@ -10,6 +10,7 @@ type SummaryData = {
   resolvedItems: number;
   expiredItems: number;
   totalClaims: number;
+  pendingReports: number;
   resolutionRate: number;
 };
 
@@ -36,7 +37,23 @@ type Log = {
   createdAt: string;
 };
 
-type View = "analytics" | "items" | "logs";
+type Report = {
+  _id: string;
+  itemId: {
+    _id: string;
+    title: string;
+    type: string;
+    category: string;
+    status: string;
+    deletedAt: string | null;
+  } | null;
+  reporterEmail: string;
+  reason: string;
+  status: "pending" | "reviewed" | "dismissed";
+  createdAt: string;
+};
+
+type View = "analytics" | "items" | "logs" | "reports";
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -46,6 +63,7 @@ export default function AdminPage() {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [byCategory, setByCategory] = useState<CategoryStat[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [actionMsg, setActionMsg] = useState("");
 
@@ -70,6 +88,8 @@ export default function AdminPage() {
         setByCategory(data.data.byCategory);
       } else if (view === "items") {
         setItems(data.data);
+      } else if (view === "reports") {
+        setReports(data.data);
       } else {
         setLogs(data.data);
       }
@@ -89,6 +109,20 @@ export default function AdminPage() {
     });
     if (res.ok) {
       setActionMsg(`Item ${action === "delete" ? "deleted" : "resolved"} successfully`);
+      fetchView();
+      setTimeout(() => setActionMsg(""), 3000);
+    }
+  }
+
+  async function handleReportAction(id: string, action: "reviewed" | "dismissed") {
+    const endpoint = `/api/reports/${id}`;
+    const res = await fetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: action }),
+    });
+    if (res.ok) {
+      setActionMsg(`Report marked as ${action}`);
       fetchView();
       setTimeout(() => setActionMsg(""), 3000);
     }
@@ -117,6 +151,7 @@ export default function AdminPage() {
         <div style={{ display: "flex", gap: "0.5rem", background: "var(--surface-color)", padding: "0.4rem", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
           <button style={navStyle("analytics")} onClick={() => setView("analytics")}>Analytics</button>
           <button style={navStyle("items")} onClick={() => setView("items")}>All Items</button>
+          <button style={navStyle("reports")} onClick={() => setView("reports")}>Reports</button>
           <button style={navStyle("logs")} onClick={() => setView("logs")}>Audit Logs</button>
         </div>
       </div>
@@ -137,6 +172,7 @@ export default function AdminPage() {
                   { label: "Resolved", value: summary.resolvedItems, color: "#10b981" },
                   { label: "Expired", value: summary.expiredItems, color: "#8c8176" },
                   { label: "Claims", value: summary.totalClaims, color: "#f59e0b" },
+                  { label: "Pending Reports", value: summary.pendingReports, color: "#ef4444" },
                   { label: "Resolution rate", value: `${summary.resolutionRate}%`, color: "#6366f1" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="custom-card" style={{ padding: "1.25rem", textAlign: "center" }}>
@@ -219,6 +255,71 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {view === "reports" && (
+            <div className="custom-card" style={{ padding: "0", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                <thead>
+                  <tr style={{ background: "var(--bg-color)", borderBottom: "1px solid var(--border-color)" }}>
+                    {["Item Info", "Reporter", "Reason", "Status", "Reported At", "Actions"].map((h) => (
+                      <th key={h} style={{ padding: "0.875rem 1rem", textAlign: "left", fontWeight: 600, color: "var(--text-muted)" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((report) => (
+                    <tr key={report._id} style={{ borderBottom: "1px solid var(--border-color)" }}>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {report.itemId ? (
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{report.itemId.title}</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                              {report.itemId.type.toUpperCase()} • {report.itemId.category}
+                              {report.itemId.deletedAt && " • (Deleted)"}
+                            </div>
+                            <a href={`/item/${report.itemId._id}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.75rem", color: "var(--primary)", textDecoration: "none" }}>View Item &rarr;</a>
+                          </div>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)" }}>Item Deleted</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>{report.reporterEmail}</td>
+                      <td style={{ padding: "0.75rem 1rem", maxWidth: "250px", wordBreak: "break-word" }}>{report.reason}</td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <span style={{
+                          padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: 600,
+                          background: report.status === "pending" ? "rgba(245,158,11,0.1)" : report.status === "reviewed" ? "rgba(16,185,129,0.1)" : "rgba(107,114,128,0.1)",
+                          color: report.status === "pending" ? "#f59e0b" : report.status === "reviewed" ? "#10b981" : "#6b7280"
+                        }}>
+                          {report.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", whiteSpace: "nowrap" }}>{new Date(report.createdAt).toLocaleDateString()}</td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {report.status === "pending" && (
+                          <div style={{ display: "flex", gap: "0.4rem" }}>
+                            <button onClick={() => handleReportAction(report._id, "reviewed")} style={{ padding: "0.3rem 0.6rem", background: "#10b981", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.75rem" }}>
+                              Mark Reviewed
+                            </button>
+                            <button onClick={() => handleReportAction(report._id, "dismissed")} style={{ padding: "0.3rem 0.6rem", background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border-color)", borderRadius: "4px", cursor: "pointer", fontSize: "0.75rem" }}>
+                              Dismiss
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {reports.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
+                        No reports found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

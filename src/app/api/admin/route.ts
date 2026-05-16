@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Item from '@/models/Item';
 import Claim from '@/models/Claim';
 import AdminLog from '@/models/AdminLog';
+import ItemReport from '@/models/ItemReport';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { isAdmin } from '@/lib/adminAuth';
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
         resolvedItems,
         expiredItems,
         totalClaims,
+        pendingReports,
         byCategory,
         byType,
         recentActivity,
@@ -36,6 +38,7 @@ export async function GET(request: NextRequest) {
         Item.countDocuments({ status: 'resolved', deletedAt: null }),
         Item.countDocuments({ status: 'expired', deletedAt: null }),
         Claim.countDocuments(),
+        ItemReport.countDocuments({ status: 'pending' }),
         Item.aggregate([
           { $match: { deletedAt: null } },
           { $group: { _id: '$category', count: { $sum: 1 } } },
@@ -65,7 +68,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          summary: { totalItems, openItems, resolvedItems, expiredItems, totalClaims, resolutionRate },
+          summary: { totalItems, openItems, resolvedItems, expiredItems, totalClaims, pendingReports, resolutionRate },
           byCategory,
           byType,
           recentActivity,
@@ -76,6 +79,14 @@ export async function GET(request: NextRequest) {
     if (view === 'logs') {
       const logs = await AdminLog.find().sort({ createdAt: -1 }).limit(100);
       return NextResponse.json({ success: true, data: logs });
+    }
+
+    if (view === 'reports') {
+      const reports = await ItemReport.find()
+        .populate('itemId', 'title type category status deletedAt')
+        .sort({ createdAt: -1 })
+        .limit(100);
+      return NextResponse.json({ success: true, data: reports });
     }
 
     // Default: all items including deleted

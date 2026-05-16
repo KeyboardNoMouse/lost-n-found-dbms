@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import "./page.css";
 
 type Item = {
@@ -41,6 +42,7 @@ function SkeletonCard() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [filter, setFilter] = useState<"all" | "lost" | "found">("all");
   const [category, setCategory] = useState("All");
@@ -187,7 +189,7 @@ export default function Home() {
               </div>
             ) : (
               items.map((item) => (
-                <div key={item._id} className="custom-card item-card">
+                <div key={item._id} className="custom-card item-card" onClick={() => router.push(`/item/${item._id}`)} style={{ cursor: "pointer" }}>
                   <span className={item.type === "lost" ? "item-badge-lost" : "item-badge-found"}>
                     {item.type.toUpperCase()}
                   </span>
@@ -228,12 +230,12 @@ export default function Home() {
                       </div>
 
                       <div className="meta-actions">
-                        <Link href={`/claim/${item._id}`} className="btn-contact btn-contact-claim">
+                        <Link href={`/claim/${item._id}`} className="btn-contact btn-contact-claim" onClick={(e) => e.stopPropagation()}>
                           {item.type === 'lost' ? 'Respond' : 'Claim'}
                         </Link>
                         <button 
                           className="btn-report-flag" 
-                          onClick={() => setReportingItemId(item._id)}
+                          onClick={(e) => { e.stopPropagation(); setReportingItemId(item._id); }}
                           title="Report this item"
                         >
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">

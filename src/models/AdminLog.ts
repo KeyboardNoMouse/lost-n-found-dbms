@@ -3,7 +3,7 @@ import mongoose, { Schema, model, models } from "mongoose";
 export interface IAdminLog {
   _id?: string;
   adminEmail: string;
-  action: "delete_item" | "expire_item" | "resolve_item" | "view_all";
+  action: "delete_item" | "expire_item" | "resolve_item" | "view_all" | "review_report" | "dismiss_report";
   targetId?: string;
   details?: string;
   createdAt: Date;
@@ -14,7 +14,7 @@ const AdminLogSchema = new Schema<IAdminLog>(
     adminEmail: { type: String, required: true },
     action: {
       type: String,
-      enum: ["delete_item", "expire_item", "resolve_item", "view_all"],
+      enum: ["delete_item", "expire_item", "resolve_item", "view_all", "review_report", "dismiss_report"],
       required: true,
     },
     targetId: { type: String },

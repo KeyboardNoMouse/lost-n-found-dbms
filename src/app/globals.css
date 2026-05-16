@@ -13,6 +13,14 @@
   --accent: #D8A47F;
 }
 
+:root.dark {
+  --bg-color: #1A1614;
+  --surface-color: #26211E;
+  --border-color: #3D352F;
+  --text-main: #EFE9E3;
+  --text-muted: #A89C8F;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
