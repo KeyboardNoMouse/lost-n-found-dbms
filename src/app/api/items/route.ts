@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       try {
         imageUrl = await new Promise<string>((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: 'nielostnfound', moderation: 'aws_rek' },
+            { folder: 'nielostnfound' },
             (error, result) => {
               if (error) reject(error);
               else resolve(result?.secure_url ?? '');

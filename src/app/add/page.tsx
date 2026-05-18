@@ -150,9 +150,6 @@ export default function AddItem() {
               <label>Phone Number (Optional)</label>
               <input type="tel" name="phone" className={fc("phone")} placeholder="E.g., +91 9876543210" />
               {errors.phone && <span className="field-error">{errors.phone}</span>}
-              <small style={{ color: "var(--text-muted)", display: "block", marginTop: "0.4rem" }}>
-                If provided, people can contact you directly about this report.
-              </small>
             </div>
           </div>
 
