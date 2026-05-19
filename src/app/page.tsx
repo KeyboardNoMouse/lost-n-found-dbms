@@ -124,8 +124,7 @@ export default function Home() {
     <main>
       <div className="dashboard-header">
         <div>
-          <h1 className="page-title">Campus Hub</h1>
-          <p style={{ color: "var(--text-muted)" }}>Lost &amp; Found listings at NIE</p>
+          <h1 className="page-title">Lost &amp; Found listings at NIE</h1>
         </div>
         <div className="filters">
           {(["all", "lost", "found"] as const).map((f) => (

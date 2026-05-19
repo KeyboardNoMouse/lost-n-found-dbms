@@ -113,7 +113,7 @@ Message from them:
 Please contact them via their email ${finalPhone ? 'or phone number ' : ''}to coordinate.
 
 Thank you,
-NIE LostnFound Team
+Campus Connect Team
     `.trim();
 
     const claimerEmailText = `
@@ -127,7 +127,7 @@ Your message to them:
 They will contact you soon. If they don't, you can also reach out to them if their contact details are available.
 
 Thank you,
-NIE LostnFound Team
+Campus Connect Team
     `.trim();
 
     // Send emails asynchronously
@@ -135,15 +135,15 @@ NIE LostnFound Team
       sendEmail({
         to: item.reporterEmail,
         subject: item.type === 'lost' 
-          ? `[NIE LostnFound] Someone responded to your lost item: ${item.title}`
-          : `[NIE LostnFound] Someone claimed your found item: ${item.title}`,
+          ? `[Campus Connect] Someone responded to your lost item: ${item.title}`
+          : `[Campus Connect] Someone claimed your found item: ${item.title}`,
         text: reporterEmailText,
       }),
       sendEmail({
         to: session.user.email,
         subject: item.type === 'lost'
-          ? `[NIE LostnFound] Your response was sent for the lost item: ${item.title}`
-          : `[NIE LostnFound] Claim request sent for: ${item.title}`,
+          ? `[Campus Connect] Your response was sent for the lost item: ${item.title}`
+          : `[Campus Connect] Claim request sent for: ${item.title}`,
         text: claimerEmailText,
       })
     ]);
